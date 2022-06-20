@@ -1,0 +1,3 @@
+[submodule "ircked"]
+	path = ircked
+	url = https://github.com/kurisufriend/ircked
