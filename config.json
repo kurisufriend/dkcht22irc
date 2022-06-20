@@ -1,0 +1,8 @@
+{
+    "deek_user": "YOUR_USERNAME_HERE",
+    "deek_passwd": "YOUR_PASSWORD_HERE",
+    "irc_serb": "irc.rizon.net",
+    "irc_port": 7000,
+    "irc_nick": "birdbridge",
+    "irc_chan": "#birdchat"
+}
