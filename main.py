@@ -49,7 +49,10 @@ class bird_inst():
                 except Exception as e: print("hey buddy your shits fucked thought you might want to know", e)
     def handle_message(self, ctx):
         print("btw i just got this", ctx["data"]["message"])
-        self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["name"]+": "+ctx["data"]["message"]).msg)
+        mesg = ctx["data"]["message"]
+        chunks = list(mesg[0+i:500+i] for i in range(0, len(mesg), 500))
+        for m in chunks:
+            self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["name"]+": "+m).msg)
     def handle_avatar(self, ctx): pass
     def handle_files(self, ctx):
         self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["name"]+": "+ctx["data"]["message"]).msg)
@@ -62,11 +65,6 @@ class bird_inst():
         if self.ws is None: return
         print(msg)
         self.send_queue.append(msg)
-        #loop = asyncio.new_event_loop()
-        #asyncio.set_event_loop(loop)
-        #loop.create_task(self.send_post(pm.bod))
-        #loop.run_forever()
-        #pass#await self.ws.send(json.dumps({"type": "message", "message": msg}))
     async def _send_post(self):
         while True:
             for msg in self.send_queue:
@@ -74,7 +72,6 @@ class bird_inst():
                 self.send_queue.remove(msg)
                 print("shipped", msg)
             await asyncio.sleep(.5)
-            print("blab")
 cfg = json.loads(open("config.json", "r").read())
 bi = bird_inst("wss://deekchat.ml/ws", "https://deekchat.ml", cfg)
 print("yes hello birdchat here")
