@@ -71,7 +71,7 @@ class bird_inst():
                 await self.ws.send(json.dumps({"type": "message", "data": {"message": msg}}))
                 self.send_queue.remove(msg)
                 print("shipped", msg)
-            await asyncio.sleep(.5)
+            await asyncio.sleep(.1)
 cfg = json.loads(open("config.json", "r").read())
 bi = bird_inst("wss://deekchat.ml/ws", "https://deekchat.ml", cfg)
 print("yes hello birdchat here")
