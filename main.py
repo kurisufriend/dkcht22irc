@@ -49,7 +49,8 @@ class bird_inst():
                 except Exception as e: print("hey buddy your shits fucked thought you might want to know", e)
     def handle_message(self, ctx):
         print("btw i just got this", ctx["data"]["message"])
-        mesg = ctx["data"]["message"]
+        if ctx["name"] == self.config["deek_user"]: return
+        mesg = ctx["data"]["message"].replace("\n", " ")
         chunks = list(mesg[0+i:400+i] for i in range(0, len(mesg), 400))
         for m in chunks:
             self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["name"]+": "+m).msg)
