@@ -50,7 +50,7 @@ class bird_inst():
     def handle_message(self, ctx):
         print("btw i just got this", ctx["data"]["message"])
         mesg = ctx["data"]["message"]
-        chunks = list(mesg[0+i:500+i] for i in range(0, len(mesg), 500))
+        chunks = list(mesg[0+i:400+i] for i in range(0, len(mesg), 400))
         for m in chunks:
             self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["name"]+": "+m).msg)
     def handle_avatar(self, ctx): pass
