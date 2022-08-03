@@ -65,7 +65,7 @@ class bird_inst():
     def handle_files(self, ctx):
         ctx["data"]["message"]["text"] = html.unescape(ctx["data"]["message"]["text"])
         self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["message"]["name"]+": "+ctx["data"]["message"]["text"]).msg)
-        for f in ctx["data"]["files"]:
+        for f in ctx["data"]["message"]["files"]:
             self.limiter.action(self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], f"({ctx['name']} uploaded file: {self.httpendpoint}/storage/files/{f['name']})").msg,))
     def handle_exit(self, ctx): pass
     def handle_enter(self, ctx): pass
