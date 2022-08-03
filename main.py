@@ -49,14 +49,14 @@ class bird_inst():
                 except Exception as e: print("hey buddy your shits fucked thought you might want to know", e)
     def handle_message(self, ctx):
         print("btw i just got this", ctx["data"]["message"]["text"])
-        if ctx["name"] == self.config["deek_user"]: return
+        if ctx["data"]["message"]["name"] == self.config["deek_user"]: return
         mesg = ctx["data"]["message"]["text"].replace("\n", " ")
         chunks = list(mesg[0+i:400+i] for i in range(0, len(mesg), 400))
         for m in chunks:
-            self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["name"]+": "+m).msg)
+            self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["message"]["name"]+": "+m).msg)
     def handle_avatar(self, ctx): pass
     def handle_files(self, ctx):
-        self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["name"]+": "+ctx["data"]["message"]["text"]).msg)
+        self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["message"]["name"]+": "+ctx["data"]["message"]["text"]).msg)
         for f in ctx["data"]["files"]:
             self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], f"({ctx['name']} uploaded file: {self.httpendpoint}/storage/files/{f['name']})").msg)
     def handle_exit(self, ctx): pass
