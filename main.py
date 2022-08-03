@@ -3,6 +3,7 @@ from ircked.bot import irc_bot
 from ircked.message import *
 import traceback
 import html
+import ratelimiter
 
 class bird_inst():
     def __init__(self, endpoint, httpendpoint, config):
@@ -14,6 +15,8 @@ class bird_inst():
         self.irc = irc_bot(nick=self.config["irc_nick"])
         self.irc.connect_register(self.config["irc_serb"], self.config["irc_port"])
         self.send_queue = []
+
+        self.limiter = ratelimiter.ratelimit(.1)
 
         def irc_handler(msg, ctx):
             #print("<><><><>", str(msg))
@@ -43,11 +46,13 @@ class bird_inst():
         async with websockets.connect(self.endpoint, extra_headers=self.headers) as self.ws:
             print(self.ws)
             asyncio.get_event_loop().create_task(self._send_post())
+            asyncio.get_event_loop().create_task(self.ship_queued_messages())
             while True:
                 data = json.loads(await self.ws.recv())
                 print(">>>", data)
-                try: getattr(self, "handle_"+data["type"], None)(data)
-                except Exception as e: print("hey buddy your shits fucked thought you might want to know", e)
+                getattr(self, "handle_"+data["type"], None)(data)
+                #try: getattr(self, "handle_"+data["type"], None)(data)
+                #except Exception as e: print("hey buddy your shits fucked thought you might want to know", e)
     def handle_message(self, ctx):
         print("btw i just got this", ctx["data"]["message"]["text"])
         ctx["data"]["message"]["text"] = html.unescape(ctx["data"]["message"]["text"])
@@ -55,13 +60,13 @@ class bird_inst():
         mesg = ctx["data"]["message"]["text"].replace("\n", " ")
         chunks = list(mesg[0+i:400+i] for i in range(0, len(mesg), 400))
         for m in chunks:
-            self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["message"]["name"]+": "+m).msg)
+            self.limiter.action(self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["message"]["name"]+": "+m).msg,))
     def handle_avatar(self, ctx): pass
     def handle_files(self, ctx):
         ctx["data"]["message"]["text"] = html.unescape(ctx["data"]["message"]["text"])
         self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["message"]["name"]+": "+ctx["data"]["message"]["text"]).msg)
         for f in ctx["data"]["files"]:
-            self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], f"({ctx['name']} uploaded file: {self.httpendpoint}/storage/files/{f['name']})").msg)
+            self.limiter.action(self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], f"({ctx['name']} uploaded file: {self.httpendpoint}/storage/files/{f['name']})").msg,))
     def handle_exit(self, ctx): pass
     def handle_enter(self, ctx): pass
     def handle_userLoaded(self, ctx): pass
@@ -75,6 +80,10 @@ class bird_inst():
                 await self.ws.send(json.dumps({"type": "message", "data": {"message": msg}}))
                 self.send_queue.remove(msg)
                 print("shipped", msg)
+            await asyncio.sleep(.1)
+    async def ship_queued_messages(self):
+        while True:
+            self.limiter.lazyrun()
             await asyncio.sleep(.1)
 cfg = json.loads(open("config.json", "r").read())
 bi = bird_inst("wss://deekchat.ml/ws", "https://deekchat.ml", cfg)
