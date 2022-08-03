@@ -50,9 +50,8 @@ class bird_inst():
             while True:
                 data = json.loads(await self.ws.recv())
                 print(">>>", data)
-                getattr(self, "handle_"+data["type"], None)(data)
-                #try: getattr(self, "handle_"+data["type"], None)(data)
-                #except Exception as e: print("hey buddy your shits fucked thought you might want to know", e)
+                try: getattr(self, "handle_"+data["type"], None)(data)
+                except Exception as e: print("hey buddy your shits fucked thought you might want to know", e)
     def handle_message(self, ctx):
         print("btw i just got this", ctx["data"]["message"]["text"])
         ctx["data"]["message"]["text"] = html.unescape(ctx["data"]["message"]["text"])
