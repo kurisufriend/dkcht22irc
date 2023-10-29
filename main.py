@@ -28,7 +28,7 @@ class bird_inst():
                 message.manual(":"+msg.parameters[0], "PRIVMSG", [msg.prefix[1:].split("!")[0], ":\x01dorfl bot\x01"]).send(ctx.socket)
             if msg.command == "PRIVMSG" and ("py-ctcp" not in msg.prefix):
                 pm = privmsg.parse(msg)
-                self.send_post(pm.fr.split("!")[0]+": "+pm.bod)
+                self.send_post("<"+pm.fr.split("!")[0]+"> "+pm.bod)
         threading.Thread(target=self.irc.run, kwargs={"event_handler": irc_handler}, daemon=True).start()
     def auth(self, name, passwd):
         h = {
