@@ -61,7 +61,7 @@ class bird_inst():
         mesg = ctx["data"]["text"].replace("\n", " ")
         chunks = list(mesg[0+i:400+i] for i in range(0, len(mesg), 400))
         for m in chunks:
-            self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["name"]+": "+m).msg,))
+            self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], "<"+ctx["data"]["name"]+"> "+m).msg,))
     def handle_messageStart(self, ctx): pass
     def handle_messageChange(self, ctx): pass
     def handle_messageEnd(self, ctx): self.handle_message(ctx)
@@ -69,7 +69,7 @@ class bird_inst():
     def handle_loadUsers(self, ctx): pass
     def handle_files(self, ctx):
         ctx["data"]["text"] = html.unescape(ctx["data"]["text"])
-        self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["name"]+": "+ctx["data"]["text"]).msg)
+        self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], "<"+ctx["data"]["name"]+"> "+ctx["data"]["text"]).msg)
         for f in ctx["data"]["files"]:
             self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], f"({ctx['data']['name']} uploaded file: {self.httpendpoint}/storage/files/{f['name']} )").msg,))
     def handle_exit(self, ctx): pass
