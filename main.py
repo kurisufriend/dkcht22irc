@@ -64,7 +64,7 @@ class bird_inst():
             self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["name"]+": "+m).msg,))
     def handle_messageStart(self, ctx): pass
     def handle_messageChange(self, ctx): pass
-    def handle_messageEnd(self, ctx): handle_message(ctx)
+    def handle_messageEnd(self, ctx): self.handle_message(ctx)
     def handle_avatar(self, ctx): pass
     def handle_loadUsers(self, ctx): pass
     def handle_files(self, ctx):
