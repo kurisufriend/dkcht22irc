@@ -32,7 +32,7 @@ class bird_inst():
         threading.Thread(target=self.irc.run, kwargs={"event_handler": irc_handler}, daemon=True).start()
     def auth(self, name, passwd):
         h = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0",
+            "User-Agent": "renabot",
             "Origin": "https://deek.chat", 
             "DNT": "1",
         }
