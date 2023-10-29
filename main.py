@@ -16,7 +16,7 @@ class bird_inst():
         self.irc.connect_register(self.config["irc_serb"], self.config["irc_port"])
         self.send_queue = []
 
-        self.limiter = ratelimiter.ratelimit(.1)
+        self.limiter = ratelimiter.ratelimit(.5)
 
         def irc_handler(msg, ctx):
             #print("<><><><>", str(msg))
@@ -33,10 +33,11 @@ class bird_inst():
     def auth(self, name, passwd):
         h = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0",
-            "Origin": "https://deekchat.ml", 
+            "Origin": "https://deek.chat", 
             "DNT": "1",
         }
         res = requests.post(self.httpendpoint+"/login/submit", headers=h, data={"name": name, "password": passwd, "submit": "log+in"}, allow_redirects=False)
+        print(res.headers)
         token = re.search("(?:api_token)=[^;]+", res.headers.get("Set-Cookie")).group(0)
         sessid = re.search("(?:session_id)=[^;]+", res.headers.get("Set-Cookie")).group(0)
         h["Cookie"] = token+"; "+sessid
@@ -50,22 +51,27 @@ class bird_inst():
             while True:
                 data = json.loads(await self.ws.recv())
                 print(">>>", data)
+                #getattr(self, "handle_"+data["type"], None)(data)
                 try: getattr(self, "handle_"+data["type"], None)(data)
                 except Exception as e: print("hey buddy your shits fucked thought you might want to know", e)
     def handle_message(self, ctx):
-        print("btw i just got this", ctx["data"]["message"]["text"])
-        ctx["data"]["message"]["text"] = html.unescape(ctx["data"]["message"]["text"])
-        if ctx["data"]["message"]["name"] == self.config["deek_user"]: return
-        mesg = ctx["data"]["message"]["text"].replace("\n", " ")
+        print("btw i just got this", ctx["data"]["text"])
+        ctx["data"]["text"] = html.unescape(ctx["data"]["text"])
+        if ctx["data"]["name"] == self.config["deek_user"]: return
+        mesg = ctx["data"]["text"].replace("\n", " ")
         chunks = list(mesg[0+i:400+i] for i in range(0, len(mesg), 400))
         for m in chunks:
-            self.limiter.action(self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["message"]["name"]+": "+m).msg,))
+            self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["name"]+": "+m).msg,))
+    def handle_messageStart(self, ctx): pass
+    def handle_messageChange(self, ctx): pass
+    def handle_messageEnd(self, ctx): handle_message(ctx)
     def handle_avatar(self, ctx): pass
+    def handle_loadUsers(self, ctx): pass
     def handle_files(self, ctx):
-        ctx["data"]["message"]["text"] = html.unescape(ctx["data"]["message"]["text"])
-        self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["message"]["name"]+": "+ctx["data"]["message"]["text"]).msg)
-        for f in ctx["data"]["message"]["files"]:
-            self.limiter.action(self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], f"({ctx['data']['message']['name']} uploaded file: {self.httpendpoint}/storage/files/{f['name']})").msg,))
+        ctx["data"]["text"] = html.unescape(ctx["data"]["text"])
+        self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], ctx["data"]["name"]+": "+ctx["data"]["text"]).msg)
+        for f in ctx["data"]["files"]:
+            self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], f"({ctx['data']['name']} uploaded file: {self.httpendpoint}/storage/files/{f['name']} )").msg,))
     def handle_exit(self, ctx): pass
     def handle_enter(self, ctx): pass
     def handle_userLoaded(self, ctx): pass
@@ -76,7 +82,7 @@ class bird_inst():
     async def _send_post(self):
         while True:
             for msg in self.send_queue:
-                await self.ws.send(json.dumps({"type": "message", "data": {"message": msg}}))
+                await self.ws.send(json.dumps({"type": "message", "data": msg, "roomId": 1}))
                 self.send_queue.remove(msg)
                 print("shipped", msg)
             await asyncio.sleep(.1)
@@ -85,7 +91,7 @@ class bird_inst():
             self.limiter.lazyrun()
             await asyncio.sleep(.1)
 cfg = json.loads(open("config.json", "r").read())
-bi = bird_inst("wss://deekchat.ml/ws", "https://deekchat.ml", cfg)
+bi = bird_inst("wss://deek.chat/ws", "https://deek.chat", cfg)
 print("yes hello birdchat here")
 bi.auth(cfg["deek_user"], cfg["deek_passwd"])
 while True:
