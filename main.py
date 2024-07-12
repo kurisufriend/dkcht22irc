@@ -78,6 +78,8 @@ class bird_inst():
     def handle_avatar(self, ctx): pass
     def handle_loadUsers(self, ctx): pass
     def handle_files(self, ctx):
+        room = int(ctx["roomId"])
+        if not room in self.config["irc_chan2deekroomid"].values(): return
         ctx["data"]["text"] = html.unescape(ctx["data"]["text"])
         irc_chan = ""
         for k in self.config["irc_chan2deekroomid"].keys():
