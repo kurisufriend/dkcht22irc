@@ -55,13 +55,17 @@ class bird_inst():
                 try: getattr(self, "handle_"+data["type"], None)(data)
                 except Exception as e: print("hey buddy your shits fucked thought you might want to know", e)
     def handle_message(self, ctx):
+        room = int(ctx["roomId"])
+        if room != self.config["deek_roomid"]: return
         print("btw i just got this", ctx["data"]["text"])
         ctx["data"]["text"] = html.unescape(ctx["data"]["text"])
         if ctx["data"]["name"] == self.config["deek_user"]: return
         mesg = ctx["data"]["text"].replace("\n", " ")
         chunks = list(mesg[0+i:400+i] for i in range(0, len(mesg), 400))
+        chunks = ["<"+ctx["data"]["name"]+"> "+m for m in chunks]
+        chunks[0] = f"(#{ctx['data']['id']}) " + chunks[0]
         for m in chunks:
-            self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], "<"+ctx["data"]["name"]+"> "+m).msg,))
+            self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], m).msg,))
     def handle_messageStart(self, ctx): pass
     def handle_messageChange(self, ctx): pass
     def handle_messageEnd(self, ctx): self.handle_message(ctx)

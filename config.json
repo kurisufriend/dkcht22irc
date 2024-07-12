@@ -1,6 +1,7 @@
 {
-    "deek_user": "YOUR_USERNAME_HERE",
-    "deek_passwd": "YOUR_PASSWORD_HERE",
+    "deek_user": "ur usrnm",
+    "deek_passwd": "ur pswd",
+    "deek_roomid": 1,
     "irc_serb": "irc.rizon.net",
     "irc_port": 7000,
     "irc_nick": "birdbridge",
