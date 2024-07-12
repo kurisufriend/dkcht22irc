@@ -1,10 +1,12 @@
 {
     "deek_user": "ur usrnm",
     "deek_passwd": "ur pswd",
-    "deek_roomid": 1,
     "irc_serb": "irc.rizon.net",
     "irc_port": 7000,
     "irc_nick": "birdbridge",
-    "irc_chan": "#birdchat",
+    "irc_chan2deekroomid": {
+        "#birdchat": 1,
+        "#birdpunx": 107
+    },
     "passthru_nick": "messages sent from this IRC nick are not prefixed by <nick>"
 }

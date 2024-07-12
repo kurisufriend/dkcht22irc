@@ -19,18 +19,18 @@ class bird_inst():
         self.limiter = ratelimiter.ratelimit(.5)
 
         def irc_handler(msg, ctx):
-            #print("<><><><>", str(msg))
             if msg.command == "PING":
                 message.manual("", "PONG", msg.parameters).send(ctx.socket)
             elif msg.command == "001":
-                message.manual("", "JOIN", [self.config["irc_chan"]]).send(ctx.socket)
+                for chan in self.config["irc_chan2deekroomid"].keys():
+                    message.manual("", "JOIN", [chan]).send(ctx.socket)
             elif msg.command == "PRIVMSG" and "\x01VERSION\x01" in msg.parameters:
                 message.manual(":"+msg.parameters[0], "PRIVMSG", [msg.prefix[1:].split("!")[0], ":\x01dorfl bot\x01"]).send(ctx.socket)
             if msg.command == "PRIVMSG" and ("py-ctcp" not in msg.prefix):
                 pm = privmsg.parse(msg)
                 post = pm.bod
                 if pm.fr.split("!")[0] != self.config["passthru_nick"]: post = "<"+pm.fr.split("!")[0]+"> " + post
-                self.send_post(post)
+                self.send_post(post, self.config["irc_chan2deekroomid"][pm.to])
         threading.Thread(target=self.irc.run, kwargs={"event_handler": irc_handler}, daemon=True).start()
     def auth(self, name, passwd):
         h = {
@@ -58,7 +58,7 @@ class bird_inst():
                 except Exception as e: print("hey buddy your shits fucked thought you might want to know", e)
     def handle_message(self, ctx):
         room = int(ctx["roomId"])
-        if room != self.config["deek_roomid"]: return
+        if not room in self.config["irc_chan2deekroomid"].values(): return
         print("btw i just got this", ctx["data"]["text"])
         ctx["data"]["text"] = html.unescape(ctx["data"]["text"])
         if ctx["data"]["name"] == self.config["deek_user"]: return
@@ -66,8 +66,12 @@ class bird_inst():
         chunks = list(mesg[0+i:400+i] for i in range(0, len(mesg), 400))
         chunks = ["<"+ctx["data"]["name"]+"> "+m for m in chunks]
         chunks[0] = f"(#{ctx['data']['id']}) " + chunks[0]
+        irc_chan = ""
+        for k in self.config["irc_chan2deekroomid"].keys():
+            if self.config["irc_chan2deekroomid"][k] == room:
+                irc_chan = k
         for m in chunks:
-            self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], m).msg,))
+            self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], irc_chan, m).msg,))
     def handle_messageStart(self, ctx): pass
     def handle_messageChange(self, ctx): pass
     def handle_messageEnd(self, ctx): self.handle_message(ctx)
@@ -75,20 +79,24 @@ class bird_inst():
     def handle_loadUsers(self, ctx): pass
     def handle_files(self, ctx):
         ctx["data"]["text"] = html.unescape(ctx["data"]["text"])
-        self.irc.sendraw(privmsg.build(self.config["irc_nick"], self.config["irc_chan"], "<"+ctx["data"]["name"]+"> "+ctx["data"]["text"]).msg)
+        irc_chan = ""
+        for k in self.config["irc_chan2deekroomid"].keys():
+            if self.config["irc_chan2deekroomid"][k] == room:
+                irc_chan = k
+        self.irc.sendraw(privmsg.build(self.config["irc_nick"], irc_chan, "<"+ctx["data"]["name"]+"> "+ctx["data"]["text"]).msg)
         for f in ctx["data"]["files"]:
-            self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], self.config["irc_chan"], f"({ctx['data']['name']} uploaded file: {self.httpendpoint}/storage/files/{f['name']} )").msg,))
+            self.limiter.action(True, self.irc.sendraw, (privmsg.build(self.config["irc_nick"], irc_chan, f"({ctx['data']['name']} uploaded file: {self.httpendpoint}/storage/files/{f['name']} )").msg,))
     def handle_exit(self, ctx): pass
     def handle_enter(self, ctx): pass
     def handle_userLoaded(self, ctx): pass
-    def send_post(self, msg):
+    def send_post(self, msg, room):
         if self.ws is None: return
         print(msg)
-        self.send_queue.append(msg)
+        self.send_queue.append((msg, room))
     async def _send_post(self):
         while True:
             for msg in self.send_queue:
-                await self.ws.send(json.dumps({"type": "message", "data": msg, "roomId": 1}))
+                await self.ws.send(json.dumps({"type": "message", "data": msg[0], "roomId": msg[1]}))
                 self.send_queue.remove(msg)
                 print("shipped", msg)
             await asyncio.sleep(.1)
